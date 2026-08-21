@@ -8,6 +8,7 @@ import {
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
+import { defineMessages, getIntl } from '@server/i18n';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
@@ -41,6 +42,23 @@ export class BlocklistedMediaError extends Error {}
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
 };
+
+const messages = defineMessages('notifications.event', {
+  approved: '{mediaType} Request Approved',
+  approved4k: '4K {mediaType} Request Approved',
+  autoApproved: '{mediaType} Request Automatically Approved',
+  autoApproved4k: '4K {mediaType} Request Automatically Approved',
+  autoRequested: '{mediaType} Request Automatically Submitted',
+  autoRequested4k: '4K {mediaType} Request Automatically Submitted',
+  available: '{mediaType} Now Available',
+  available4k: '4K {mediaType} Now Available',
+  declined: '{mediaType} Request Declined',
+  declined4k: '4K {mediaType} Request Declined',
+  failed: '{mediaType} Request Failed',
+  failed4k: '4K {mediaType} Request Failed',
+  pending: 'New {mediaType} Request',
+  pending4k: 'New 4K {mediaType} Request',
+});
 
 @Entity()
 export class MediaRequest {
@@ -767,41 +785,60 @@ export class MediaRequest {
     const tmdb = new TheMovieDb();
 
     try {
+      const intl = getIntl();
       const mediaType = entity.type === MediaType.MOVIE ? 'Movie' : 'Series';
+      const is4k = entity.is4k;
       let event: string | undefined;
       let notifyAdmin = true;
       let notifySystem = true;
 
       switch (type) {
         case Notification.MEDIA_AVAILABLE:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Now Available`;
+          event = intl.formatMessage(
+            is4k ? messages.available4k : messages.available,
+            { mediaType }
+          );
           notifyAdmin = false;
           break;
         case Notification.MEDIA_APPROVED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Approved`;
+          event = intl.formatMessage(
+            is4k ? messages.approved4k : messages.approved,
+            { mediaType }
+          );
           notifyAdmin = false;
           break;
         case Notification.MEDIA_DECLINED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Declined`;
+          event = intl.formatMessage(
+            is4k ? messages.declined4k : messages.declined,
+            { mediaType }
+          );
           notifyAdmin = false;
           break;
         case Notification.MEDIA_PENDING:
-          event = `New ${entity.is4k ? '4K ' : ''}${mediaType} Request`;
+          event = intl.formatMessage(
+            is4k ? messages.pending4k : messages.pending,
+            { mediaType }
+          );
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
-          event = `${
-            entity.is4k ? '4K ' : ''
-          }${mediaType} Request Automatically Submitted`;
+          event = intl.formatMessage(
+            is4k ? messages.autoRequested4k : messages.autoRequested,
+            { mediaType }
+          );
           notifyAdmin = false;
           notifySystem = false;
           break;
         case Notification.MEDIA_AUTO_APPROVED:
-          event = `${
-            entity.is4k ? '4K ' : ''
-          }${mediaType} Request Automatically Approved`;
+          event = intl.formatMessage(
+            is4k ? messages.autoApproved4k : messages.autoApproved,
+            { mediaType }
+          );
           break;
         case Notification.MEDIA_FAILED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Failed`;
+          event = intl.formatMessage(
+            is4k ? messages.failed4k : messages.failed,
+            { mediaType }
+          );
           break;
       }
 
